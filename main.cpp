@@ -94,6 +94,8 @@ int main(void) {
 
         cv::threshold(imgDifference, imgThresh, 30, 255.0, CV_THRESH_BINARY);
 
+        cv::imshow("imgThresh", imgThresh);
+
         cv::Mat structuringElement3x3 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
         cv::Mat structuringElement5x5 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
         cv::Mat structuringElement7x7 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
@@ -104,8 +106,6 @@ int main(void) {
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
             cv::erode(imgThresh, imgThresh, structuringElement5x5);
         }
-
-        cv::imshow("imgThresh", imgThresh);
 
         cv::Mat imgThreshCopy = imgThresh.clone();
 
@@ -132,7 +132,7 @@ int main(void) {
                 possibleBlob.currentBoundingRect.width > 30 &&
                 possibleBlob.currentBoundingRect.height > 30 &&
                 possibleBlob.dblCurrentDiagonalSize > 60.0 &&
-                (cv::contourArea(possibleBlob.currentConvexHull) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
+                (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
                 currentFrameBlobs.push_back(possibleBlob);
             }
         }
@@ -249,7 +249,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex) {
 
-    existingBlobs[intIndex].currentConvexHull = currentFrameBlob.currentConvexHull;
+    existingBlobs[intIndex].currentContour = currentFrameBlob.currentContour;
     existingBlobs[intIndex].currentBoundingRect = currentFrameBlob.currentBoundingRect;
 
     existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
@@ -296,7 +296,7 @@ void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::strin
 
     for (auto &blob : blobs) {
         if (blob.blnStillBeingTracked == true) {
-            contours.push_back(blob.currentConvexHull);
+            contours.push_back(blob.currentContour);
         }
     }
 

@@ -3,11 +3,11 @@
 #include "Blob.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-Blob::Blob(std::vector<cv::Point> _convexHull) {
+Blob::Blob(std::vector<cv::Point> _contour) {
 
-    currentConvexHull = _convexHull;
+    currentContour = _contour;
 
-    currentBoundingRect = cv::boundingRect(currentConvexHull);
+    currentBoundingRect = cv::boundingRect(currentContour);
 
     cv::Point currentCenter;
 

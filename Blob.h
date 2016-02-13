@@ -11,7 +11,7 @@
 class Blob {
 public:
     // member variables ///////////////////////////////////////////////////////////////////////////
-    std::vector<cv::Point> currentConvexHull;
+    std::vector<cv::Point> currentContour;
 
     cv::Rect currentBoundingRect;
 
@@ -20,7 +20,6 @@ public:
     double dblCurrentDiagonalSize;
     double dblCurrentAspectRatio;
 
-    bool blnTrackedCurrently;
     bool blnCurrentMatchFoundOrNewBlob;
 
     bool blnStillBeingTracked;
