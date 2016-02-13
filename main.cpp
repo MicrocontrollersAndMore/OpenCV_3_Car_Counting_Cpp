@@ -223,7 +223,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
             }
         }
 
-        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.7) {
+        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) {
             addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
         }
         else {
