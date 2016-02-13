@@ -23,6 +23,8 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs);
 double distanceBetweenPoints(cv::Point point1, cv::Point point2);
+void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName);
+void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLinePosition, int &carCount);
 void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy);
 void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
@@ -45,13 +47,13 @@ int main(void) {
 
     if (!capVideo.isOpened()) {                                                 // if unable to open video file
         std::cout << "error reading video file" << std::endl << std::endl;      // show error message
-        _getch();                    // it may be necessary to change or remove this line if not using Windows
+        _getch();                   // it may be necessary to change or remove this line if not using Windows
         return(0);                                                              // and exit program
     }
 
     if (capVideo.get(CV_CAP_PROP_FRAME_COUNT) < 2) {
         std::cout << "error: video file must have at least two frames";
-        _getch();
+        _getch();                   // it may be necessary to change or remove this line if not using Windows
         return(0);
     }
 
@@ -69,6 +71,8 @@ int main(void) {
     char chCheckForEscKey = 0;
 
     bool blnFirstFrame = true;
+
+    int frameCount = 2;
 
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
@@ -90,8 +94,6 @@ int main(void) {
 
         cv::threshold(imgDifference, imgThresh, 30, 255.0, CV_THRESH_BINARY);
 
-        cv::imshow("imgThresh", imgThresh);
-
         cv::Mat structuringElement3x3 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
         cv::Mat structuringElement5x5 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
         cv::Mat structuringElement7x7 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
@@ -103,10 +105,7 @@ int main(void) {
             cv::erode(imgThresh, imgThresh, structuringElement5x5);
         }
 
-        /*
-        cv::dilate(imgThresh, imgThresh, structuringElement7x7);
-        cv::erode(imgThresh, imgThresh, structuringElement3x3);
-        */
+        cv::imshow("imgThresh", imgThresh);
 
         cv::Mat imgThreshCopy = imgThresh.clone();
 
@@ -114,41 +113,41 @@ int main(void) {
 
         cv::findContours(imgThreshCopy, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-        for (auto &contour : contours) {
-            Blob possibleBlob(contour);
+        drawAndShowContours(imgThresh.size(), contours, "imgContours");
 
-            if (possibleBlob.currentBoundingRect.area() > 500 &&
-                possibleBlob.dblCurrentAspectRatio > 0.25 &&
+        std::vector<std::vector<cv::Point> > convexHulls(contours.size());
+
+        for (unsigned int i = 0; i < contours.size(); i++) {
+            cv::convexHull(contours[i], convexHulls[i]);
+        }
+
+        drawAndShowContours(imgThresh.size(), convexHulls, "imgConvexHulls");
+
+        for (auto &convexHull : convexHulls) {
+            Blob possibleBlob(convexHull);
+
+            if (possibleBlob.currentBoundingRect.area() > 400 &&
+                possibleBlob.dblCurrentAspectRatio > 0.2 &&
                 possibleBlob.dblCurrentAspectRatio < 4.0 &&
                 possibleBlob.currentBoundingRect.width > 30 &&
                 possibleBlob.currentBoundingRect.height > 30 &&
                 possibleBlob.dblCurrentDiagonalSize > 60.0 &&
-                (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.40) {
+                (cv::contourArea(possibleBlob.currentConvexHull) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
                 currentFrameBlobs.push_back(possibleBlob);
             }
         }
+
+        drawAndShowContours(imgThresh.size(), currentFrameBlobs, "imgCurrentFrameBlobs");
 
         if (blnFirstFrame == true) {
             for (auto &currentFrameBlob : currentFrameBlobs) {
                 blobs.push_back(currentFrameBlob);
             }
-        }
-        else {
+        } else {
             matchCurrentFrameBlobsToExistingBlobs(blobs, currentFrameBlobs);
         }
 
-        cv::Mat imgContours(imgThresh.size(), CV_8UC3, SCALAR_BLACK);
-        contours.clear();
-
-        for (auto &blob : blobs) {
-            if (blob.blnStillBeingTracked == true) {
-                contours.push_back(blob.currentContour);
-            }
-        }
-
-        cv::drawContours(imgContours, contours, -1, SCALAR_WHITE, -1);
-
-        cv::imshow("imgContours", imgContours);
+        drawAndShowContours(imgThresh.size(), blobs, "imgBlobs");
 
         imgFrame2Copy = imgFrame2.clone();          // get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 
@@ -167,7 +166,9 @@ int main(void) {
 
         cv::imshow("imgFrame2Copy", imgFrame2Copy);
 
-        // now we prepare for the next iteration
+        //cv::waitKey(0);                 // uncomment this line to go frame by frame for debugging
+        
+                // now we prepare for the next iteration
 
         currentFrameBlobs.clear();
 
@@ -182,7 +183,7 @@ int main(void) {
         }
 
         blnFirstFrame = false;
-
+        frameCount++;
         chCheckForEscKey = cv::waitKey(1);
     }
 
@@ -207,10 +208,12 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
     for (auto &currentFrameBlob : currentFrameBlobs) {
 
         int intIndexOfLeastDistance = 0;
-        double dblLeastDistance = 1000000.0;
+        double dblLeastDistance = 100000.0;
 
-        for (unsigned int i = 0; i < existingBlobs.size() - 1; i++) {
+        for (unsigned int i = 0; i < existingBlobs.size(); i++) {
+
             if (existingBlobs[i].blnStillBeingTracked == true) {
+
                 double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
 
                 if (dblDistance < dblLeastDistance) {
@@ -220,7 +223,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
             }
         }
 
-        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 1.5) {
+        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.7) {
             addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
         }
         else {
@@ -246,7 +249,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex) {
 
-    existingBlobs[intIndex].currentContour = currentFrameBlob.currentContour;
+    existingBlobs[intIndex].currentConvexHull = currentFrameBlob.currentConvexHull;
     existingBlobs[intIndex].currentBoundingRect = currentFrameBlob.currentBoundingRect;
 
     existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
@@ -268,21 +271,38 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 double distanceBetweenPoints(cv::Point point1, cv::Point point2) {
-    /*
-    int intX = abs(firstBlob.ptCurrentCenter.x - secondBlob.ptCurrentCenter.x);
-    int intY = abs(firstBlob.ptCurrentCenter.y - secondBlob.ptCurrentCenter.y);
-
-    return(sqrt(pow(intX, 2) + pow(intY, 2)));
-    */
-    /*
-    int intX = abs(currentFrameBlob.ptCurrentCenter.x - existingBlob.predictedCenterPositions.back().x);
-    int intY = abs(currentFrameBlob.ptCurrentCenter.y - existingBlob.predictedCenterPositions.back().y);
-    */
-
+    
     int intX = abs(point1.x - point2.x);
     int intY = abs(point1.y - point2.y);
 
     return(sqrt(pow(intX, 2) + pow(intY, 2)));
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName) {
+    cv::Mat image(imageSize, CV_8UC3, SCALAR_BLACK);
+
+    cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
+
+    cv::imshow(strImageName, image);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName) {
+    
+    cv::Mat image(imageSize, CV_8UC3, SCALAR_BLACK);
+
+    std::vector<std::vector<cv::Point> > contours;
+
+    for (auto &blob : blobs) {
+        if (blob.blnStillBeingTracked == true) {
+            contours.push_back(blob.currentConvexHull);
+        }
+    }
+
+    cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
+
+    cv::imshow(strImageName, image);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -291,7 +311,7 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLine
 
     for (auto blob : blobs) {
 
-        if (blob.blnStillBeingTracked) {
+        if (blob.blnStillBeingTracked == true && blob.centerPositions.size() >= 2) {
             int prevFrameIndex = (int)blob.centerPositions.size() - 2;
             int currFrameIndex = (int)blob.centerPositions.size() - 1;
 
@@ -302,8 +322,6 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLine
         }
 
     }
-
-    std::cout << "carCount = " << carCount << "\n";
 
     return blnAtLeastOneBlobCrossedTheLine;
 }

@@ -11,7 +11,7 @@
 class Blob {
 public:
     // member variables ///////////////////////////////////////////////////////////////////////////
-    std::vector<cv::Point> currentContour;
+    std::vector<cv::Point> currentConvexHull;
 
     cv::Rect currentBoundingRect;
 
