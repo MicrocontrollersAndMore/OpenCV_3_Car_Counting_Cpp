@@ -36,8 +36,7 @@ void Blob::predictNextPosition(void) {
         predictedNextPosition.x = centerPositions.back().x;
         predictedNextPosition.y = centerPositions.back().y;
 
-    }
-    else if (numPositions == 2) {
+    } else if (numPositions == 2) {
 
         int deltaX = centerPositions[1].x - centerPositions[0].x;
         int deltaY = centerPositions[1].y - centerPositions[0].y;
@@ -45,8 +44,7 @@ void Blob::predictNextPosition(void) {
         predictedNextPosition.x = centerPositions.back().x + deltaX;
         predictedNextPosition.y = centerPositions.back().y + deltaY;
 
-    }
-    else if (numPositions == 3) {
+    } else if (numPositions == 3) {
 
         int sumOfXChanges = ((centerPositions[2].x - centerPositions[1].x) * 2) +
             ((centerPositions[1].x - centerPositions[0].x) * 1);
@@ -61,8 +59,7 @@ void Blob::predictNextPosition(void) {
         predictedNextPosition.x = centerPositions.back().x + deltaX;
         predictedNextPosition.y = centerPositions.back().y + deltaY;
 
-    }
-    else if (numPositions == 4) {
+    } else if (numPositions == 4) {
 
         int sumOfXChanges = ((centerPositions[3].x - centerPositions[2].x) * 3) +
             ((centerPositions[2].x - centerPositions[1].x) * 2) +
@@ -79,8 +76,7 @@ void Blob::predictNextPosition(void) {
         predictedNextPosition.x = centerPositions.back().x + deltaX;
         predictedNextPosition.y = centerPositions.back().y + deltaY;
 
-    }
-    else if (numPositions >= 5) {
+    } else if (numPositions >= 5) {
 
         int sumOfXChanges = ((centerPositions[numPositions - 1].x - centerPositions[numPositions - 2].x) * 4) +
             ((centerPositions[numPositions - 2].x - centerPositions[numPositions - 3].x) * 3) +
@@ -99,13 +95,9 @@ void Blob::predictNextPosition(void) {
         predictedNextPosition.x = centerPositions.back().x + deltaX;
         predictedNextPosition.y = centerPositions.back().y + deltaY;
 
-    }
-    else {
+    } else {
         // should never get here
     }
 
 }
-
-
-
 

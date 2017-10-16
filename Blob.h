@@ -36,4 +36,3 @@ public:
 
 #endif    // MY_BLOB
 
-

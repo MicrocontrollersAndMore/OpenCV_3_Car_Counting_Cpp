@@ -157,8 +157,7 @@ int main(void) {
 
         if (blnAtLeastOneBlobCrossedTheLine == true) {
             cv::line(imgFrame2Copy, crossingLine[0], crossingLine[1], SCALAR_GREEN, 2);
-        }
-        else {
+        } else {
             cv::line(imgFrame2Copy, crossingLine[0], crossingLine[1], SCALAR_RED, 2);
         }
 
@@ -167,8 +166,8 @@ int main(void) {
         cv::imshow("imgFrame2Copy", imgFrame2Copy);
 
         //cv::waitKey(0);                 // uncomment this line to go frame by frame for debugging
-        
-                // now we prepare for the next iteration
+
+        // now we prepare for the next iteration
 
         currentFrameBlobs.clear();
 
@@ -176,8 +175,7 @@ int main(void) {
 
         if ((capVideo.get(CV_CAP_PROP_POS_FRAMES) + 1) < capVideo.get(CV_CAP_PROP_FRAME_COUNT)) {
             capVideo.read(imgFrame2);
-        }
-        else {
+        } else {
             std::cout << "end of video\n";
             break;
         }
@@ -271,7 +269,7 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 double distanceBetweenPoints(cv::Point point1, cv::Point point2) {
-    
+
     int intX = abs(point1.x - point2.x);
     int intY = abs(point1.y - point2.y);
 
@@ -289,7 +287,7 @@ void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName) {
-    
+
     cv::Mat image(imageSize, CV_8UC3, SCALAR_BLACK);
 
     std::vector<std::vector<cv::Point> > contours;
@@ -360,13 +358,4 @@ void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy) {
     cv::putText(imgFrame2Copy, std::to_string(carCount), ptTextBottomLeftPosition, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
 
 }
-
-
-
-
-
-
-
-
-
 
